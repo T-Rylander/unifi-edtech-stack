@@ -1,13 +1,40 @@
 # 📝 CONTRIBUTING.md
 
-Welcome to the **unifi-edtech-stack** repository. This document outlines the guidelines for contributing to the project.
+## 📌 Guidelines
 
----
+1. **Branching**:
+   - Create a new branch for each feature or fix: `git checkout -b feature/your-feature-name`.
 
-## 📌 Contribution Guidelines
+2. **Code Style**:
+   - Use `snake_case` for filenames and variables.
+   - Use `camelCase` for functions and methods.
 
-### 📁 1. Branching Strategy
+3. **Documentation**:
+   - Add or update documentation in `README.md`, `SECURITY.md`, or `TROUBLESHOOTING.md`.
+   - Ensure all new scripts have a `README` or inline comments.
 
-- Create a new branch for each feature or bug fix:
-  ```bash
-  git checkout -b feature/your-feature-name
+4. **Commit Messages**:
+   - Use clear and descriptive commit messages.
+   - Example: `Fix: Update UniFi compose to use pinned image versions`.
+
+5. **Pull Requests**:
+   - Submit a PR to the `main` branch.
+   - Ensure your PR includes a description of the change and any relevant tests.
+
+6. **Testing**:
+   - Test your changes on a Pi before submitting.
+   - Ensure no breaking changes are introduced without a rollback plan.
+
+7. **Security**:
+   - Never commit secrets (API keys, passwords, etc.) to the repo.
+   - Use `.env` files for sensitive data and add them to `.gitignore`.
+
+## 📁 Folder Structure
+
+- `scripts/`: Automation scripts for Pi boot and maintenance.
+- `docker/`: Docker Compose files for UniFi and other services.
+- `unifi-logs/`: Log files from UniFi for AI ingestion.
+- `README.md`: This file.
+- `SECURITY.md`: Security hardening checklist.
+- `MONITORING.md`: Monitoring and alerting setup.
+- `AI-ROADMAP.md`: Roadmap for AI integration with the stack.
