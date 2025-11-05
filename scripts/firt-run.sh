@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script configuration
-NONINTERACTIVE=${NONINTERACTIVE:-0}  # Set to 1 for non-interactive mode
+NONINTERACTIVE=${NONINTERACTIVE:-1}  # Set to 1 for non-interactive mode
 DEFAULT_ANSWER=${DEFAULT_ANSWER:-"n"} # Default answer for prompts in non-interactive mode
 TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-30} # Timeout for user input
 
