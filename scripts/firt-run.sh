@@ -1,5 +1,38 @@
 #!/bin/bash
 
+# Script configuration
+NONINTERACTIVE=${NONINTERACTIVE:-0}  # Set to 1 for non-interactive mode
+DEFAULT_ANSWER=${DEFAULT_ANSWER:-"n"} # Default answer for prompts in non-interactive mode
+TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-30} # Timeout for user input
+
+# Helper function for getting user input with timeout
+get_user_input() {
+    local prompt=$1
+    local default=${2:-"n"}
+    local timeout=${3:-$TIMEOUT_SECONDS}
+    local choice
+
+    if [ "$NONINTERACTIVE" = "1" ]; then
+        echo "$prompt (non-interactive mode, using default: $default)"
+        return 0
+    fi
+
+    # Use read with timeout if available
+    if [ -t 0 ]; then  # Only if running in terminal
+        echo -n "$prompt "
+        if ! read -t "$timeout" -r choice; then
+            echo -e "\nTimed out after ${timeout}s, using default: $default"
+            choice=$default
+        fi
+    else
+        echo "$prompt (non-terminal, using default: $default)"
+        choice=$default
+    fi
+
+    # Return 0 for yes, 1 for no
+    [[ "${choice:-$default}" =~ ^[Yy] ]]
+}
+
 # OS Version Check
 check_os_version() {
     . /etc/os-release
@@ -11,9 +44,9 @@ check_os_version() {
     if [[ ! "$VERSION_ID" =~ ^(12|13)$ ]]; then
         echo "Warning: Unsupported OS version $VERSION_ID ($PRETTY_NAME)"
         echo "This script is tested on Raspbian/Debian 12 (Bookworm) or 13 (Trixie)"
-        echo "Continue anyway? (y/n)"
-        read -r choice
-        [[ "$choice" == "y" ]] || return 1
+        if ! get_user_input "Continue anyway? (y/n)" "n" ; then
+            return 1
+        fi
     fi
     return 0
 }
@@ -55,9 +88,9 @@ check_temperature() {
 
     if (( $(echo "$temp > $temp_warn" | bc -l) )); then
         echo "Warning: Temperature is high (${temp}°C > ${temp_warn}°C)"
-        echo "Continue anyway? (y/n)"
-        read -r choice
-        [[ "$choice" == "y" ]] || return 1
+        if ! get_user_input "Continue anyway? (y/n)" "n"; then
+            return 1
+        fi
     fi
 
     return 0
@@ -94,13 +127,27 @@ check_internet() {
         echo "  - DNS settings"
         echo "  - Firewall rules"
         
-        echo -n "Would you like to:"
+        if [ "$NONINTERACTIVE" = "1" ]; then
+            echo "Non-interactive mode: choosing to exit"
+            return 1
+        fi
+
+        echo "Would you like to:"
         echo "  1) Retry check"
         echo "  2) Continue anyway (not recommended)"
         echo "  3) Exit"
-        read -r -p "Choose (1-3): " choice
         
-        case $choice in
+        if [ -t 0 ]; then  # Only if running in terminal
+            if ! read -t "$TIMEOUT_SECONDS" -r -p "Choose (1-3): " choice; then
+                echo -e "\nTimed out, choosing to exit"
+                return 1
+            fi
+        else
+            echo "Non-terminal environment: choosing to exit"
+            return 1
+        fi
+        
+        case ${choice:-3} in
             1) return 2 ;; # Retry
             2) return 0 ;; # Continue
             *) return 1 ;; # Exit
@@ -193,9 +240,9 @@ check_storage() {
     if [ ${#warnings[@]} -gt 0 ]; then
         printf "\nWarnings:\n"
         printf "  • %s\n" "${warnings[@]}"
-        echo -n "Continue despite warnings? (y/n) "
-        read -r choice
-        [[ "$choice" == "y" ]] || return 1
+        if ! get_user_input "Continue despite warnings? (y/n)" "n"; then
+            return 1
+        fi
     fi
 
     return 0
