@@ -1,0 +1,48 @@
+# OS-specific files
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.pid
+*.core
+
+# Package lock files
+package-lock.json
+yarn.lock
+npm-shrinkwrap.json
+
+# IDE/Editor files
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+*.swn
+
+# Docker
+docker-compose.override.yml
+docker-compose.local.yml
+.env
+.env.local
+
+# Pi/SD images
+*.img
+*.iso
+
+# Node modules (if using Node)
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# UniFi logs (keep directory, ignore contents)
+unifi-logs/*.log
+unifi-logs/*.txt
