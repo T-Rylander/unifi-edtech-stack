@@ -7,30 +7,55 @@ TIMEOUT_SECONDS=${TIMEOUT_SECONDS:-30} # Timeout for user input
 
 # Helper function for getting user input with timeout
 get_user_input() {
-    local prompt=$1
+    local prompt="$1"
     local default=${2:-"n"}
     local timeout=${3:-$TIMEOUT_SECONDS}
     local choice
 
     if [ "$NONINTERACTIVE" = "1" ]; then
         echo "$prompt (non-interactive mode, using default: $default)"
-        return 0
-    fi
-
-    # Use read with timeout if available
-    if [ -t 0 ]; then  # Only if running in terminal
-        echo -n "$prompt "
-        if ! read -t "$timeout" -r choice; then
-            echo -e "\nTimed out after ${timeout}s, using default: $default"
-            choice=$default
+        if [[ "$default" =~ ^[Yy] ]]; then
+            return 0
+        else
+            return 1
         fi
-    else
-        echo "$prompt (non-terminal, using default: $default)"
-        choice=$default
     fi
 
-    # Return 0 for yes, 1 for no
-    [[ "${choice:-$default}" =~ ^[Yy] ]]
+    # If not attached to a terminal, fall back to default
+    if [ ! -t 0 ]; then
+        echo "$prompt (no TTY, using default: $default)"
+        if [[ "$default" =~ ^[Yy] ]]; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+
+    # Prompt loop: keep asking until we get a valid y/n or timeout occurs
+    while true; do
+        printf "%s " "$prompt"
+
+        if [ -n "$timeout" ] && [ "$timeout" -gt 0 ]; then
+            if ! read -r -t "$timeout" choice; then
+                echo
+                echo "Timed out after ${timeout}s, using default: $default"
+                choice="$default"
+                # fall through to validation
+            fi
+        else
+            read -r choice
+        fi
+
+        # Strip possible CR (windows CRLF) and surrounding whitespace
+        choice="${choice%%$'\r'}"
+        choice="$(echo -n "$choice" | awk '{gsub(/^ +| +$/,"",$0); print $0}')"
+
+        case "${choice:-$default}" in
+            [Yy]|[Yy][Ee][Ss]) return 0 ;;
+            [Nn]|[Nn][Oo]) return 1 ;;
+            *) echo "Please answer y or n." ;;
+        esac
+    done
 }
 
 # OS Version Check
