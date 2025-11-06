@@ -1,0 +1,167 @@
+version: "3.8"
+
+# UniFi Edtech Stack Orchestration - PATCHED VERSION
+# - Expects first-run.sh to have prepared /etc/unifi-edtech/config.env and the Docker network
+# - Designed for Raspberry Pi 5 (aarch64) with Docker Compose v2.24+
+# - Services: WireGuard, UniFi Network Application, Ollama (optional via profile)
+# - Patched: healthchecks, env validation, logging limits, security hardening
+
+# Shared logging configuration to prevent disk exhaustion
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: unifi-wg-tunnel
+    env_file:
+      - path: /etc/unifi-edtech/config.env
+        required: true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+      # linuxserver/wireguard specific
+      - SERVERURL=${SERVERURL:-auto}
+      - SERVERPORT=${WG_PORT:-51820}
+      - PEERS=${WG_PEERS:-1}
+      - PEERDNS=${PEERDNS:-auto}
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      net.ipv4.conf.all.src_valid_mark: 1
+      net.ipv4.ip_forward: 1
+    volumes:
+      - /etc/wireguard:/config
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - "${WG_PORT:-51820}:51820/udp"
+    networks:
+      - unifi-net
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wg show | grep -q 'interface:' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  unifi-controller:
+    # Multi-arch image; works on aarch64 (Pi 5)
+    image: jacobalberty/unifi:latest
+    container_name: unifi-controller
+    env_file:
+      - path: /etc/unifi-edtech/config.env
+        required: true
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      # Run as non-root inside container when possible
+      - RUNAS_UID0=false
+      # Memory limit for the Java process inside the container
+      - JVM_MAX_HEAP_SIZE=${JVM_MAX_HEAP_SIZE:-512M}
+      # Use embedded MongoDB by default (recommended for small installs)
+      - DB_TYPE=${DB_TYPE:-MONGODB_EMBEDDED}
+      # Port overrides (only change if you must)
+      - UNIFI_HTTPS_PORT=${UNIFI_HTTPS_PORT:-8443}
+      - UNIFI_HTTP_PORT=${UNIFI_HTTP_PORT:-8080}
+      - UNIFI_STUN_PORT=${UNIFI_STUN_PORT:-3478}
+    volumes:
+      - unifi-data:/unifi
+      - unifi-logs:/var/log/unifi
+      - unifi-init:/var/lib/unifi/init.d
+    ports:
+      # Core controller ports (required)
+      - "${UNIFI_HTTP_PORT:-8080}:8080"
+      - "${UNIFI_HTTPS_PORT:-8443}:8443"
+      - "${UNIFI_STUN_PORT:-3478}:3478/udp"
+      - "10001:10001/udp"
+      - "1900:1900/udp"
+      # Optional ports - uncomment if needed for guest portal/speed test
+      # - "8843:8843"    # Guest portal HTTPS
+      # - "8880:8880"    # Guest portal HTTP
+      # - "6789:6789"    # Speed test
+      # - "5514:5514/udp"  # Remote syslog
+    networks:
+      - unifi-net
+    depends_on:
+      wireguard:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      # Web UI comes up on 8443 with self-signed cert; -k to ignore cert
+      test: ["CMD-SHELL", "curl -k -fsS https://localhost:${UNIFI_HTTPS_PORT:-8443}/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-ai
+    profiles: ["ai"]  # enable with: docker compose --profile ai up -d
+    env_file:
+      - path: /etc/unifi-edtech/config.env
+        required: true
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODELS=/models
+    volumes:
+      - ollama-models:/root/.ollama
+      - /tmp:/tmp
+    ports:
+      - "11434:11434"
+    networks:
+      - unifi-net
+    restart: unless-stopped
+    logging: *default-logging
+    # Uncomment for Coral TPU or AI accelerator HAT support
+    # devices:
+    #   - /dev/apex_0:/dev/apex_0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # edtech-api:
+  #   build: ../services/edtech-api
+  #   container_name: edtech-api
+  #   env_file:
+  #     - path: /etc/unifi-edtech/config.env
+  #       required: true
+  #   environment:
+  #     - NODE_ENV=production
+  #     - UNIFI_BASE_URL=https://unifi-controller:${UNIFI_HTTPS_PORT:-8443}
+  #   depends_on:
+  #     unifi-controller:
+  #       condition: service_healthy
+  #   networks:
+  #     - unifi-net
+  #   restart: unless-stopped
+  #   logging: *default-logging
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 40s
+
+volumes:
+  unifi-data:
+  unifi-logs:
+  unifi-init:
+  ollama-models:
+
+networks:
+  unifi-net:
+    external: true
+    name: ${DOCKER_NETWORK:-unifi-net}
