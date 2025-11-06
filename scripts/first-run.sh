@@ -233,6 +233,12 @@ PEERDNS="auto"
 
 # AI Settings
 ENABLE_OLLAMA=1
+
+# Edtech API Settings
+LOG_LEVEL="INFO"
+RATE_LIMIT="10/minute"
+# API key for securing edtech-api requests (set a strong value!)
+API_KEY=""
 EOF
     sudo chmod 600 "$CONFIG_FILE"
 fi
@@ -616,6 +622,9 @@ WG_PEERS="${WG_PEERS:-1}"
 SERVERURL="${SERVERURL:-auto}"
 PEERDNS="${PEERDNS:-auto}"
 ENABLE_OLLAMA="${ENABLE_OLLAMA:-1}"
+LOG_LEVEL="${LOG_LEVEL:-INFO}"
+RATE_LIMIT="${RATE_LIMIT:-10/minute}"
+API_KEY="${API_KEY:-}"
 EOF
     if sudo cp "$tmp_file" "$CONFIG_FILE" 2>/dev/null; then
         sudo chmod 600 "$CONFIG_FILE"
@@ -647,7 +656,7 @@ validate_config() {
             show_error "Config" "Missing required variable: $var"
             return 1
         fi
-    }
+    done
     
     # Validate IP formats
     local ip_vars=("IP" "DOCKER_SUBNET" "WG_NETWORK")
@@ -662,7 +671,7 @@ validate_config() {
     if ! [[ "$WG_PORT" =~ ^[0-9]+$ ]] || (( WG_PORT < 1 || WG_PORT > 65535 )); then
         show_error "Config" "Invalid port number for WG_PORT: $WG_PORT"
         return 1
-    }
+    fi
     
     # Validate boolean settings
     local bool_vars=("ENABLE_APPARMOR" "ENABLE_FAIL2BAN" "SSH_KEY_ONLY" "ENABLE_OLLAMA")

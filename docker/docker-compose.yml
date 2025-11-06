@@ -132,28 +132,41 @@ services:
       retries: 3
       start_period: 20s
 
-  # edtech-api:
-  #   build: ../services/edtech-api
-  #   container_name: edtech-api
-  #   env_file:
-  #     - path: /etc/unifi-edtech/config.env
-  #       required: true
-  #   environment:
-  #     - NODE_ENV=production
-  #     - UNIFI_BASE_URL=https://unifi-controller:${UNIFI_HTTPS_PORT:-8443}
-  #   depends_on:
-  #     unifi-controller:
-  #       condition: service_healthy
-  #   networks:
-  #     - unifi-net
-  #   restart: unless-stopped
-  #   logging: *default-logging
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 5
-  #     start_period: 40s
+    edtech-api:
+      build:
+        context: ../services/edtech-api
+        dockerfile: Dockerfile
+      container_name: edtech-api
+      profiles: ["ai"]  # enable with: docker compose --profile ai up -d
+      env_file:
+        - path: /etc/unifi-edtech/config.env
+          required: true
+      environment:
+        - LOG_LEVEL=${LOG_LEVEL:-INFO}
+        - API_KEY=${API_KEY:-changeme}
+        - OLLAMA_HOST=http://ollama:11434
+        - UNIFI_HOST=https://unifi-controller:${UNIFI_HTTPS_PORT:-8443}
+        - RATE_LIMIT=${RATE_LIMIT:-10/minute}
+        - AI_DECISION_LOG=/logs/ai-decisions.log
+      volumes:
+        - ~/unifi-logs:/logs
+      ports:
+        - "5000:5000"
+      networks:
+        - unifi-net
+      depends_on:
+        ollama:
+          condition: service_healthy
+        unifi-controller:
+          condition: service_healthy
+      restart: unless-stopped
+      logging: *default-logging
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+        start_period: 40s
 
 volumes:
   unifi-data:

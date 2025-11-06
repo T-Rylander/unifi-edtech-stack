@@ -1,0 +1,89 @@
+# Pre-commit hooks for UniFi Edtech Stack
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # General file cleanup
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Ensure files end with newline
+      - id: check-yaml
+        name: Validate YAML syntax
+        args: ['--unsafe']  # Allow custom YAML tags
+      - id: check-added-large-files
+        name: Prevent large files (>500KB)
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+        name: Check for merge conflict markers
+      - id: mixed-line-ending
+        name: Ensure consistent line endings (LF)
+        args: ['--fix=lf']
+
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: Shellcheck - Bash linting
+        args: ['-x']  # Follow sourced files
+
+  # Python formatting and linting
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        name: Black - Python formatter
+        language_version: python3
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort - Sort Python imports
+        args: ['--profile', 'black']
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        name: Flake8 - Python linter
+        args: ['--max-line-length=120', '--extend-ignore=E203,W503']
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        name: Markdownlint - Markdown linting
+        args: ['--config', '.markdownlint.json']
+
+  # Docker Compose validation
+  - repo: local
+    hooks:
+      - id: docker-compose-check
+        name: Docker Compose - Validate syntax
+        entry: bash -c 'cd docker && docker compose config > /dev/null'
+        language: system
+        pass_filenames: false
+        files: ^docker/docker-compose\.yml$
+
+  # Secrets detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        name: Detect secrets - Prevent credential leaks
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
+
+  # Git commit message linting
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.14.1
+    hooks:
+      - id: commitizen
+        name: Commitizen - Conventional commits
+        stages: [commit-msg]
