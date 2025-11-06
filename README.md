@@ -1,38 +1,28 @@
-# 📦 unifi-edtech-stack# 📦 unifi-edtech-stack
+# 📦 unifi-edtech-stack# 
 
 
-
-A secure, modular, and scalable on-prem edtech stack built with **Raspberry Pi 5 (8GB)**, **Docker**, **UniFi**, and **AI integration**.A secure, modular, and scalable on-prem edtech stack built with **Raspberry Pi 5 (8GB)**, **Docker**, **UniFi**, and **AI integration**.
-
+A secure, modular, and scalable on-prem edtech stack built with **Raspberry Pi 5 (8GB)**, **Docker**, **UniFi**, and **AI integration**.
 
 
 ## 🎯 Project Goals## 🎯 Project Goals
 
 
 
-- **Secure**: Hardened Pi with AppArmor, Fail2Ban, and SSH key-only access.- **Secure**: Hardened Pi with AppArmor, Fail2Ban, and SSH key-only access.
-
-- **Modular**: Docker-based services for easy deployment and scaling.- **Modular**: Docker-based services for easy deployment and scaling.
-
-- **Scalable**: WireGuard tunneling for cross-subnet connectivity.- **Scalable**: WireGuard tunneling for cross-subnet connectivity.
-
-- **Documented**: Git-versioned playbooks and scripts for reproducibility.- **Documented**: Git-versioned playbooks and scripts for reproducibility.
-
-- **AI-Ready**: Ollama/Llama integration for ops insights and anomaly detection.- **AI-Ready**: Ollama/Llama integration for ops insights and anomaly detection.
+- **Secure**: Hardened Pi with AppArmor, Fail2Ban, and SSH key-only access.-
+- **Modular**: Docker-based services for easy deployment and scaling.
+- **Scalable**: WireGuard tunneling for cross-subnet connectivity.
+- **Documented**: Git-versioned playbooks and scripts for reproducibility.
+- **AI-Ready**: Ollama/Llama integration for ops insights and anomaly detection.
 
 
 
-## 🚀 Quick Start## 🚀 Quick Start
+## 🚀 Quick Start
 
 
-
-1. **Clone the repo**:1. **Clone the repo**:
-
+1. **Clone the repo**:
    ```bash   ```bash
 
-   git clone https://github.com/T-Rylander/unifi-edtech-stack.git   git clone https://github.com/T-Rylander/unifi-edtech-stack.git
-
-   cd unifi-edtech-stack   cd unifi-edtech-stack
+   git clone https://github.com/T-Rylander/unifi-edtech-stack.git
    ```
 
 2. **Run first-run script** (on Raspberry Pi 5):
