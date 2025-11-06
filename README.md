@@ -4,7 +4,7 @@
 A secure, modular, and scalable on-prem edtech stack built with **Raspberry Pi 5 (8GB)**, **Docker**, **UniFi**, and **AI integration**.
 
 
-## 🎯 Project Goals## 🎯 Project Goals
+## 🎯 Project Goals
 
 
 
